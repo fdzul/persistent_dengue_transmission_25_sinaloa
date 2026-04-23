@@ -1,16 +1,10 @@
 ---
-title: "Programa de Prevención y Control del Dengue | 2025"
+title: "Programa de Prevención y Control de Arobovirosis | 2026 | Sinaloa"
 format: 
   dashboard:
     nav-buttons: [twitter, github, facebook]
 theme: custom.scss
 ---
-
-```{r setup}
-library(sf)
-mapview::mapviewOptions(default = TRUE,
-                        basemaps.color.shuffle = FALSE)
-```
 
 # [**Hotspots de Dengue**]{style="font-size:2pt"}
 
@@ -22,53 +16,86 @@ mapview::mapviewOptions(default = TRUE,
 <head>
 ```{=html}
 <style>
+* {
+  box-sizing: border-box;
+}
+
 body {
-  margin: 0px;
-  width: auto; 
+  margin: 0;
+  padding: 0;
+  width: 100%;
   height: auto;
 }
 
 .wrapper {
+  display: grid;
+  gap: 1px;
+  background-color: #772953;
+  width: 100%;
+  padding: 1px;
+
+  /* Desktop: layout original */
+  grid-template-columns: 1fr 1fr 1fr 1.8fr;
+  grid-template-rows: auto auto auto auto;
+}
+
+.box {
+  background-color: #772953;
+  color: #772953;
+  border-radius: 4px;
+  padding: 4px;
+  font-size: 100%;
+  min-height: 80px;
+}
+
+/* Desktop grande (>= 1024px): layout original */
+@media (min-width: 1024px) {
+  .wrapper {
     display: grid;
     grid-gap: 1px;
-    grid-template-columns: 225px 225px 225px 410px;
-    grid-template-rows: 95px 95px 95px 130px;
+    grid-template-columns: 1fr 1fr 1fr 1.8fr;
+    grid-template-rows: calc(100vh/4.5) calc(100vh/4.5) calc(100vh/4.5) calc(100vh/5);
     background-color: #772953;
     color: "#772953";
-  }
-  .box {
-    background-color: #772953;
-    color: "#772953";
-    border-radius: 2px;
-    padding: 5px;
-    font-size: 100%;
+    width: 100%;
+    height: 100vh;
+    box-sizing: border-box;
+}
+  .a { grid-column: 1 / 4; grid-row: 1 / 4; }
+  .b { grid-column: 4;     grid-row: 1 / 3; }
+  .c { grid-column: 4;     grid-row: 3 / 5; }
+  .d { grid-column: 3;     grid-row: 4;     }
+  .e { grid-column: 2;     grid-row: 4;     }
+  .f { grid-column: 1;     grid-row: 4;     }
+}
 
+/* Tablet iPad (768px – 1023px): mapa arriba, gráficas abajo */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .wrapper {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
   }
+  .a { grid-column: 1 / 3; grid-row: 1; min-height: 400px; }
+  .b { grid-column: 1;     grid-row: 2; min-height: 280px; }
+  .c { grid-column: 2;     grid-row: 2; min-height: 280px; }
+  .d { grid-column: 1;     grid-row: 3; min-height: 120px; }
+  .e { grid-column: 2;     grid-row: 3; min-height: 120px; }
+  .f { grid-column: 1 / 3; grid-row: 4; min-height: 120px; }
+}
 
-  .a {
-    grid-column: 1 / 4;
-    grid-row: 1 / 4;
+/* Smartphone (< 768px): columna única */
+@media (max-width: 767px) {
+  .wrapper {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
   }
-  .b {
-    grid-column: 4 ;
-    grid-row: 1 / 3;
-  }
-  .c {
-    grid-column: 4 ;
-    grid-row: 3 / 5 ;
-  }
-  .d {
-    grid-column: 3;
-    grid-row: 4;
-  }
-  .e {
-    grid-column: 2;
-    grid-row: 4;
-  }
-  .f {
-    grid-column: 1;
-    grid-row: 4;
-  }
+  .a { grid-column: 1; grid-row: 1; min-height: 300px; }
+  .b { grid-column: 1; grid-row: 2; min-height: 250px; }
+  .c { grid-column: 1; grid-row: 3; min-height: 250px; }
+  .d { grid-column: 1; grid-row: 4; min-height: 110px; }
+  .e { grid-column: 1; grid-row: 5; min-height: 110px; }
+  .f { grid-column: 1; grid-row: 6; min-height: 110px; }
+}
 </style>
 ```
 </head>
@@ -82,14 +109,28 @@ loc <- rgeomex::extract_locality(cve_edo = "25",
 
 # Step 2. Extract the hotspots ####
 hotspots <- hotspotsdata::den_hotspots[loc, ]
-mapview::mapview(hotspots,
-                 zcol = "intensity_gi",
-                 layer.name = "Intensidad",
-                 label = FALSE,
-                 color = "white",
-                 lwd = 0.5, 
-                 col.regions =  rcartocolor::carto_pal(n = max(hotspots$intensity_gi), 
-                                                       name = "OrYel"))
+# Step 3. map
+pal <- rcartocolor::carto_pal(n = max(hotspots$intensity_gi), name = "OrYel")
+pal_fn <- grDevices::colorRampPalette(pal)
+mapgl::maplibre_view(hotspots,
+                     column = "intensity_gi",
+                     palette = pal_fn) |>
+    mapgl::add_continuous_legend(legend_title = "Intensidad",
+                          values = seq(from = 1, 
+                                       to = max(hotspots$intensity_gi),
+                                       by = 1),
+                          colors = pal,
+                          position = "top-left",
+                          width = "250px",
+                          draggable = TRUE,
+                          style = mapgl::legend_style(element_border_width =0,
+                                                      shadow_size = 0,
+                                                      shadow = FALSE),
+                          interactive = TRUE) |>
+    mapgl::add_fullscreen_control(position = "top-left") |> 
+    mapgl::add_navigation_control() |>
+    mapgl::add_globe_control() |>
+    mapgl::add_scale_control()
 
 ```
 :::
@@ -251,15 +292,31 @@ loc <- rgeomex::extract_locality(cve_edo = "25",
                                  locality = "Guamuchil")
 
 # Step 2. Extract the hotspots ####
-hotspots <- hotspotsdata::den_hotspots[loc, ]
-mapview::mapview(hotspots,
-                 zcol = "intensity_gi",
-                 layer.name = "Intensidad",
-                 label = FALSE,
-                 color = "white",
-                 lwd = 0.5, 
-                 col.regions =  rcartocolor::carto_pal(n = max(hotspots$intensity_gi), 
-                                                       name = "OrYel"))
+#hotspots <- hotspotsdata::den_hotspots[loc, ]
+hotspots <- hotspotsdata::hotspots_hex[loc, ]
+
+# Step 3. map
+pal <- rcartocolor::carto_pal(n = max(hotspots$intensity_gi), name = "OrYel")
+pal_fn <- grDevices::colorRampPalette(pal)
+mapgl::maplibre_view(hotspots,
+                     column = "intensity_gi",
+                     palette = pal_fn) |>
+    mapgl::add_continuous_legend(legend_title = "Intensidad",
+                          values = seq(from = 1, 
+                                       to = max(hotspots$intensity_gi),
+                                       by = 1),
+                          colors = pal,
+                          position = "top-left",
+                          width = "250px",
+                          draggable = TRUE,
+                          style = mapgl::legend_style(element_border_width =0,
+                                                      shadow_size = 0,
+                                                      shadow = FALSE),
+                          interactive = TRUE) |>
+    mapgl::add_fullscreen_control(position = "top-left") |> 
+    mapgl::add_navigation_control() |>
+    mapgl::add_globe_control() |>
+    mapgl::add_scale_control()
 
 ```
 :::
@@ -425,14 +482,28 @@ loc <- rgeomex::extract_locality(cve_edo = "25",
 
 # Step 2. Extract the hotspots ####
 hotspots <- hotspotsdata::den_hotspots[loc, ]
-mapview::mapview(hotspots,
-                 zcol = "intensity_gi",
-                 layer.name = "Intensidad",
-                 label = FALSE,
-                 color = "white",
-                 lwd = 0.5, 
-                 col.regions =  rcartocolor::carto_pal(n = max(hotspots$intensity_gi), 
-                                                       name = "OrYel"))
+# Step 3. map
+pal <- rcartocolor::carto_pal(n = max(hotspots$intensity_gi), name = "OrYel")
+pal_fn <- grDevices::colorRampPalette(pal)
+mapgl::maplibre_view(hotspots,
+                     column = "intensity_gi",
+                     palette = pal_fn) |>
+    mapgl::add_continuous_legend(legend_title = "Intensidad",
+                          values = seq(from = 1, 
+                                       to = max(hotspots$intensity_gi),
+                                       by = 1),
+                          colors = pal,
+                          position = "top-left",
+                          width = "250px",
+                          draggable = TRUE,
+                          style = mapgl::legend_style(element_border_width =0,
+                                                      shadow_size = 0,
+                                                      shadow = FALSE),
+                          interactive = TRUE) |>
+    mapgl::add_fullscreen_control(position = "top-left") |> 
+    mapgl::add_navigation_control() |>
+    mapgl::add_globe_control() |>
+    mapgl::add_scale_control()
 
 ```
 :::
@@ -598,14 +669,28 @@ loc <- rgeomex::extract_locality(cve_edo = "25",
 
 # Step 2. Extract the hotspots ####
 hotspots <- hotspotsdata::hotspots_hex[loc, ]
-mapview::mapview(hotspots,
-                 zcol = "intensity_gi",
-                 layer.name = "Intensidad",
-                 label = FALSE,
-                 color = "white",
-                 lwd = 0.5, 
-                 col.regions =  rcartocolor::carto_pal(n = max(hotspots$intensity_gi), 
-                                                       name = "OrYel"))
+# Step 3. map
+pal <- rcartocolor::carto_pal(n = max(hotspots$intensity_gi), name = "OrYel")
+pal_fn <- grDevices::colorRampPalette(pal)
+mapgl::maplibre_view(hotspots,
+                     column = "intensity_gi",
+                     palette = pal_fn) |>
+    mapgl::add_continuous_legend(legend_title = "Intensidad",
+                          values = seq(from = 1, 
+                                       to = max(hotspots$intensity_gi),
+                                       by = 1),
+                          colors = pal,
+                          position = "top-left",
+                          width = "250px",
+                          draggable = TRUE,
+                          style = mapgl::legend_style(element_border_width =0,
+                                                      shadow_size = 0,
+                                                      shadow = FALSE),
+                          interactive = TRUE) |>
+    mapgl::add_fullscreen_control(position = "top-left") |> 
+    mapgl::add_navigation_control() |>
+    mapgl::add_globe_control() |>
+    mapgl::add_scale_control()
 
 ```
 :::
@@ -770,14 +855,28 @@ loc <- rgeomex::extract_locality(cve_edo = "25",
 
 # Step 2. Extract the hotspots ####
 hotspots <- hotspotsdata::hotspots_hex[loc, ]
-mapview::mapview(hotspots,
-                 zcol = "intensity_gi",
-                 layer.name = "Intensidad",
-                 label = FALSE,
-                 color = "white",
-                 lwd = 0.5, 
-                 col.regions =  rcartocolor::carto_pal(n = max(hotspots$intensity_gi), 
-                                                       name = "OrYel"))
+# Step 3. map
+pal <- rcartocolor::carto_pal(n = max(hotspots$intensity_gi), name = "OrYel")
+pal_fn <- grDevices::colorRampPalette(pal)
+mapgl::maplibre_view(hotspots,
+                     column = "intensity_gi",
+                     palette = pal_fn) |>
+    mapgl::add_continuous_legend(legend_title = "Intensidad",
+                          values = seq(from = 1, 
+                                       to = max(hotspots$intensity_gi),
+                                       by = 1),
+                          colors = pal,
+                          position = "top-left",
+                          width = "250px",
+                          draggable = TRUE,
+                          style = mapgl::legend_style(element_border_width =0,
+                                                      shadow_size = 0,
+                                                      shadow = FALSE),
+                          interactive = TRUE) |>
+    mapgl::add_fullscreen_control(position = "top-left") |> 
+    mapgl::add_navigation_control() |>
+    mapgl::add_globe_control() |>
+    mapgl::add_scale_control()
 
 ```
 :::
